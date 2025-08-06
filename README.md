@@ -1,13 +1,22 @@
 # Contratos inteligentes para gerenciamento de dispositivos IoT
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+Este projeto implementa um sistema de registro e autenticação temporária de dispositivos IoT com base em contratos inteligentes Ethereum. A proposta é permitir que sensores sejam registrados por um administrador e tenham seu tempo de validade controlado na blockchain, com autenticação verificável.
 
-Try running some of the following tasks:
+Atualmente, o projeto contempla quatro tipos de sensores:
 
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
+ProximitySensorManager
+MotionSensorManager
+HumiditySensorManager
+TemperatureSensorManager
 ```
+
+##  Requisitos
+
+- Node.js (v18+)
+- Hardhat (```npm install --save-dev hardhat```)
+- Ganache (interface gráfica ou CLI)
+
+## Como rodar localmente
+
+
