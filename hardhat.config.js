@@ -8,8 +8,8 @@ module.exports = {
     ganache: {
       url: "http://localhost:7545",
       accounts: [
-        "0x78784954a684fc03f4dfd3e935866bdc3d4fa748788da6a42edb154fd88c9742",
-        "0x6f155f91def2b74aef62b537e4b2f2a6c5d9540d8edc599b37d2ead4dd98a676"
+        "0x6106d0551dabf960de60e7e0fcbc17dbbdc7b6350e16c2392a89e71b49ead4c1",
+        "0x939c29e1a85008ef48567105c25e96897d6565a8f6b955ce5059b6388e268e94"
       ]
     }
   }

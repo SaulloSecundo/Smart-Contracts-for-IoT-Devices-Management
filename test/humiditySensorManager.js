@@ -2,55 +2,53 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("HumiditySensorManager", function () {
-  let contract;
-  let deployer;
-  let otherAccount;
+  let HumiditySensorManager, humiditySensorManager;
+  let owner, otherAccount;
 
   beforeEach(async function () {
-    [deployer, otherAccount] = await ethers.getSigners();
-
-    const ContractFactory = await ethers.getContractFactory("HumiditySensorManager");
-    contract = await ContractFactory.deploy();
-    await contract.waitForDeployment();
+    [owner, otherAccount] = await ethers.getSigners();
+    HumiditySensorManager = await ethers.getContractFactory("HumiditySensorManager");
+    humiditySensorManager = await HumiditySensorManager.deploy();
+    await humiditySensorManager.waitForDeployment();
   });
 
-  it("Permite que o admin registre um sensor", async function () {
-    const tx = await contract.registerHumiditySensor("sensor001");
-    await tx.wait();
+  it("Registra um sensor de umidade corretamente", async function () {
+    await humiditySensorManager.registerHumiditySensor("UID123", "00:11:22:33:44:55");
+    const sensor = await humiditySensorManager.sensors("UID123");
 
-    const sensor = await contract.sensors("sensor001");
-    expect(sensor.isValid).to.be.true;
+    expect(sensor.macAddress).to.equal("00:11:22:33:44:55");
+    expect(sensor.measurementType).to.equal("humidity");
+    expect(sensor.isValid).to.equal(true);
   });
 
-  it("Permite registrar um sensor já registrado", async function () {
-    await contract.registerHumiditySensor("sensor001");
-
+  it("Falha ao tentar registrar o mesmo UID novamente", async function () {
+    await humiditySensorManager.registerHumiditySensor("UID123", "00:11:22:33:44:55");
     await expect(
-      contract.registerHumiditySensor("sensor001")
+      humiditySensorManager.registerHumiditySensor("UID123", "AA:BB:CC:DD:EE:FF")
     ).to.be.revertedWith("Device already registered");
   });
 
-  it("Retorna verdadeiro se o sensor for autêntico", async function () {
-    await contract.registerHumiditySensor("sensor001");
-
-    const isAuthentic = await contract.isHumiditySensorAuthentic("sensor001");
-    expect(isAuthentic).to.be.true;
+  it("Autentica um sensor válido dentro do prazo", async function () {
+    await humiditySensorManager.registerHumiditySensor("UID123", "00:11:22:33:44:55");
+    const isAuthentic = await humiditySensorManager.isHumiditySensorAuthentic("UID123");
+    expect(isAuthentic).to.equal(true);
   });
 
-  it("Retorna falso se o sensor estiver expirado", async function () {
-    await contract.registerHumiditySensor("sensor001");
+  it("Retorna falso se o sensor registrado chegou ao tempo limite de expiração", async function () {
+    await humiditySensorManager.registerHumiditySensor("UID123", "00:11:22:33:44:55");
 
-    // avança o tempo em 3 minutos (180 segundos)
-    await ethers.provider.send("evm_increaseTime", [180]);
+    // Avança o tempo em 3 minutos (o contrato define validade de 2 minutos)
+    await ethers.provider.send("evm_increaseTime", [3 * 60]);
     await ethers.provider.send("evm_mine");
 
-    const isAuthentic = await contract.isHumiditySensorAuthentic("sensor001");
-    expect(isAuthentic).to.be.false;
+    const isAuthentic = await humiditySensorManager.isHumiditySensorAuthentic("UID123");
+    expect(isAuthentic).to.equal(false);
   });
 
-  it("Não permite que contas não-admin registre sensores", async function () {
+  it("Impede que contas não-admin registrem sensores", async function () {
     await expect(
-      contract.connect(otherAccount).registerHumiditySensor("sensor002")
+      humiditySensorManager.connect(otherAccount).registerHumiditySensor("UID456", "11:22:33:44:55:66")
     ).to.be.revertedWith("Only admin can perform this action.");
   });
 });
+
