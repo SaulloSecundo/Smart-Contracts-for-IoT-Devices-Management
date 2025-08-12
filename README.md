@@ -1,6 +1,6 @@
 # Contratos inteligentes para gerenciamento de dispositivos IoT
 
-Este projeto implementa um sistema de registro e autenticação temporária de dispositivos IoT com base em contratos inteligentes Ethereum. A proposta é permitir que sensores sejam registrados por um administrador e tenham seu tempo de validade controlado na blockchain, com autenticação verificável.
+Este projeto implementa contratos inteligentes Ethereum para atuação nos processos de registro e autenticação temporária de dispositivos IoT. No presente recorte, a proposta é permitir que sensores sejam registrados por um administrador e tenham seu tempo de validade controlado na blockchain, com autenticação verificável.
 
 Atualmente, o projeto contempla quatro tipos de sensores:
 
@@ -79,10 +79,10 @@ const Contract = await ethers.getContractFactory("HumiditySensorManager");
 const contract = await Contract.attach("ENDERECO_CONTRATO");
 
 // Registra um sensor (somente admin)
-await contract.registerHumiditySensor("sensor001");
+await contract.registerHumiditySensor("UID001", "AA-BB-CC-DD-EE-FF");
 
 // Verifica se está válido
-await contract.isHumiditySensorAuthentic("sensor001");
+await contract.isHumiditySensorAuthentic("UID001");
 ```
 
 ## Estrutura dos Contratos
@@ -95,17 +95,19 @@ Permite que apenas o administrador (endereço que fez o deploy) execute funçõe
 
 ### ```Struct``` específica
 
-Cada contrato define uma struct com dados referentes a cada tipo de sensor:
+Cada contrato define uma struct que sintetisa o mínimo de informações necessárias para efetivar a identificação única dos dispositivos no processo de registro. No contrato destinado aos sensores de umidade, por exemplo, temos o seguinte:
 
 ```shell
 struct HumiditySensor {
+  string macAddress;
   uint256 registeredAt;
   uint256 expiresAt;
   bool isValid;
 }
 ```
-Até o presente momento, as ```structs``` definidas nos 4 contratos apresentam exatamente os mesmos atributos para o processo de registro. Para composição específica em função dos tipos de sensores, pretende-se adicionar características relevantes a cada classe para enriquecer os dados de registro desses dispositivos.
 
+Para cada dispositivo registrado, o "uid" informado é mapeado para uma strutc que contém os dados do aparelho correspondente.
+ 
 ### Função ```register<SensorType>Sensor```
 
 Registra um sensor na blockchain com validade de 2 minutos (tempo de expiração usado para testes rápidos):
