@@ -28,6 +28,18 @@ describe("TemperatureSensorManager", function () {
     ).to.be.revertedWith("Device already registered");
   });
 
+  it("Falha ao tentar registrar sensor com UID vazio", async function () {
+    await expect(
+      temperatureSensorManager.registerTemperatureSensor("", "00:11:22:33:44:55")
+    ).to.be.revertedWith("UID cannot be empty");
+  });
+
+  it("Falha ao tentar registrar sensor com MAC vazio", async function () {
+    await expect(
+      temperatureSensorManager.registerTemperatureSensor("UID789", "")
+    ).to.be.revertedWith("MAC cannot be empty");
+  });
+
   it("Autentica um sensor válido dentro do prazo", async function () {
     await temperatureSensorManager.registerTemperatureSensor("UID789", "BB:11:22:33:44:55");
     const isAuthentic = await temperatureSensorManager.isTemperatureSensorAuthentic("UID789");

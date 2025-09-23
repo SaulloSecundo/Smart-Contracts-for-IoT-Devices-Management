@@ -28,6 +28,18 @@ describe("MotionSensorManager", function () {
     ).to.be.revertedWith("Device already registered");
   });
 
+  it("Falha ao tentar registrar sensor com UID vazio", async function () {
+    await expect(
+      motionSensorManager.registerMotionSensor("", "00:11:22:33:44:55")
+    ).to.be.revertedWith("UID cannot be empty");
+  });
+
+  it("Falha ao tentar registrar sensor com MAC vazio", async function () {
+    await expect(
+      motionSensorManager.registerMotionSensor("UID456", "")
+    ).to.be.revertedWith("MAC cannot be empty");
+  });
+
   it("Autentica um sensor válido dentro do prazo", async function () {
     await motionSensorManager.registerMotionSensor("UID456", "AA:11:22:33:44:55");
     const isAuthentic = await motionSensorManager.isMotionSensorAuthentic("UID456");
