@@ -38,7 +38,11 @@ contract TemperatureSensorManager {
     }
 
     function registerTemperatureSensor(string memory _uid, string memory _macAddress) public onlyAdmin {
-        //verifica se o dispositivo já/ainda está registrado na rede
+        // validação de UID e MAC
+        require(bytes(_uid).length > 0, "UID cannot be empty");
+        require(bytes(_macAddress).length > 0, "MAC cannot be empty");
+	
+	//verifica se o dispositivo já/ainda está registrado na rede
         require(!sensors[_uid].isValid, "Device already registered");
 
         //síntese da data de registro do dispositivo e seu período de validade
