@@ -5,7 +5,7 @@ contract HumiditySensorManager {
 
     address public admin;
 
-    //construtor definido para armazenar o endereço que implantou o contrato
+    // Construtor: para definir quem implantou o contrato como administrador
     constructor() {
         admin = msg.sender;
     }
@@ -23,7 +23,7 @@ contract HumiditySensorManager {
     // Mapeamento usando UID como chave
     mapping(string => HumiditySensor) public sensors;
 
-    //evento de log para o processo de registro
+    // Evento de log para o processo de registro
     event SensorRegistered(
         string uid,
         string macAddress,
@@ -33,16 +33,16 @@ contract HumiditySensorManager {
         uint256 expiresAt
     );
 
-    //evento de log para o processo de revogação do dispositivo sensor
+    // Evento de log para o processo de revogação do dispositivo sensor
     event SensorRevoked(string uid, address revokedBy, uint256 atTimestamp);
 
-    // modificador que limita o uso de funcionalidades ao administrador
+    // Modificador que limita o uso de funcionalidades ao administrador
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action.");
         _;
     }
 
-    // modificador que limita o uso de funcionalidades ao administrador e ao proprietáro do dispositivo
+    // Modificador que limita o uso da função de revogação ao administrador e ao proprietario do dispositivo
     modifier onlyOwnerOrAdmin(string memory _uid) {
         HumiditySensor memory s = sensors[_uid];
         require(s.isValid, "Sensor not registered/invalid");
@@ -50,19 +50,17 @@ contract HumiditySensorManager {
         _;
     }
 
-    // Admin registra o sensor e define o owner do dispositivo
-
+    // Função de registro: somente o admin pode registrar sensores a partir do modificador onlyAdmin()
     function registerHumiditySensor(string memory _uid, string memory _macAddress, address _owner) public onlyAdmin {
-        // validação de UID, MAC e endereço do owner
-
-    	require(bytes(_uid).length > 0, "UID cannot be empty");
-        require(bytes(_macAddress).length > 0, "MAC cannot be empty");
+        // proteção contra entradas vazias e malformadas
+        require(bytes(_uid).length > 0 && bytes(_uid).length <= 64, "Invalid UID");
+        require(bytes(_macAddress).length == 17, "Invalid MAC length");
         require(_owner != address(0), "Owner cannot be zero address");
-        
-        //verifica se o dispositivo já/ainda está registrado na rede
+
+        // proteção contra replays ou duplicações de UID
         require(!sensors[_uid].isValid, "Device already registered");
 
-        //síntese da data de registro do dispositivo e seu período de validade
+        // Registro do sensor
         uint256 nowTimestamp = block.timestamp;
         uint256 expiryTimestamp = nowTimestamp + 2 minutes;
 
@@ -78,19 +76,18 @@ contract HumiditySensorManager {
         emit SensorRegistered(_uid, _macAddress, _owner, "humidity", nowTimestamp, expiryTimestamp);
     }
 
-//Se o dispositivo está registrado e a data de validade ainda não foi atingida, a função de autenticação retorna 'true'
+    // Verifica autenticidade do sensor
     function isHumiditySensorAuthentic(string memory _uid) public view returns (bool) {
         HumiditySensor memory device = sensors[_uid];
         return device.isValid && block.timestamp <= device.expiresAt;
     }
 
-    // Revogação só por owner ou admin
+    // Revogação: somente owner ou admin
     function revokeHumiditySensor(string memory _uid) public onlyOwnerOrAdmin(_uid) {
         HumiditySensor storage device = sensors[_uid];
         device.isValid = false;
-        device.expiresAt = block.timestamp; // expira imediatamente
+        device.expiresAt = block.timestamp; // expira o tempo do dispositivo assim que seu estado é modificado
         emit SensorRevoked(_uid, msg.sender, block.timestamp);
     }
 }
-
 
