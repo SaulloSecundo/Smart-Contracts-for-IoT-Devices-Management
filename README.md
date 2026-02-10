@@ -23,7 +23,7 @@ TemperatureSensorManager
 
 ```shell
 git clone https://github.com/SaulloSecundo/Smart-Contracts-for-IoT-Devices-Management.git
-cd register-auth-device
+cd Smart-Contracts-for-IoT-Devices-Management
 ```
 
 ### 2. Instale as dependências
