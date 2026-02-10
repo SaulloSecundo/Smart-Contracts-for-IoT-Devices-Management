@@ -1,4 +1,4 @@
-# Contratos inteligentes para gerenciamento de dispositivos IoT
+# Contratos inteligentes para provisionamento de dispositivos IoT
 
 Este projeto implementa contratos inteligentes Ethereum para atuação nos processos de registro e autenticação temporária de dispositivos IoT. No presente recorte, a proposta é permitir que sensores sejam registrados por um administrador e tenham seu tempo de validade controlado na blockchain, com autenticação verificável.
 
@@ -67,23 +67,87 @@ Isso irá compilar e implantar os quatro contratos, e exibir os endereços na re
 
 ## Como interagir com os contratos
 
+Esta seção demonstra como interagir com o contrato inteligente HumiditySensorManager utilizando o Hardhat Console, após o deploy do contrato em uma rede local ou de testes.
+
 ### 1. Use o console interativo do Hardhat
 
 ```shell
 npx hardhat console --network ganache
 ```
-### 2. Exemplo de interação:
+### 2. Exemplo de interação: contrato HumiditySensorManager
+
+OBS.: A interação com os demais contratos seguem a mesma lógica
+
+#### Obtenção das contas e conexão com o contrato
 
 ```shell
-const Contract = await ethers.getContractFactory("HumiditySensorManager");
-const contract = await Contract.attach("ENDERECO_CONTRATO");
+const [admin, deviceOwner] = await ethers.getSigners();
 
-// Registra um sensor (somente admin)
-await contract.registerHumiditySensor("UID001", "AA-BB-CC-DD-EE-FF");
-
-// Verifica se está válido
-await contract.isHumiditySensorAuthentic("UID001");
+const HumiditySensorManager = await ethers.getContractFactory("HumiditySensorManager");
+const humiditySensorManager = await HumiditySensorManager.attach("ENDERECO_DO_CONTRATO");
 ```
+OBS.: O endereço do contrato deve ser substituído pelo endereço obtido no momento do deploy.
+
+#### Registro de sensores de umidade
+
+O registro de sensores é uma operação restrita ao administrador do contrato (conta que realizou o deploy).
+
+```shell
+registerHumiditySensor(
+  string uid,
+  string macAddress,
+  address owner
+)
+```
+Exemplo de registro: 
+
+```shell
+await humiditySensorManager.registerHumiditySensor(
+  "UID123",
+  "00:11:22:33:44:55",
+  deviceOwner.address
+);
+```
+
+#### Regras de validação aplicadas
+
+O uid: 
+  - não pode ser vazio
+  - deve ter no máximo 64 caracteres
+    
+O macAddress deve possuir tamanho válido;
+O owner não pode ser o endereço zero (address(0));
+Um mesmo uid não pode ser registrado mais de uma vez;
+Apenas o admin pode executar esta operação;
+
+#### Consulta dos dados do sensor
+
+Após o registro, os dados do sensor podem ser consultados diretamente no mapeamento público:
+
+```shell
+const sensor = await humiditySensorManager.sensors("UID123");
+
+console.log(sensor.macAddress);
+console.log(sensor.owner);
+console.log(sensor.isValid);
+```
+
+#### Validação do sensor cadastrado
+
+```shell
+isHumiditySensorAuthentic(string uid) → bool // true, se atender as regras de validação
+```
+
+Exemplo de uso:
+
+```shell
+const isAuthentic = await humiditySensorManager.isHumiditySensorAuthentic("UID123");
+console.log("Sensor autêntico?", isAuthentic);
+```
+
+Observação importante sobre expiração:
+Sensores possuem um tempo máximo de validade definido no contrato (2 minutos).
+Após esse período, o sensor é considerado não autêntico, mesmo que não tenha sido revogado manualmente.
 
 ## Estrutura dos Contratos
 
@@ -133,14 +197,15 @@ npx hardhat test
 
 Os testes cobrem:
 
-- Registro válido de sensores
-- Verificação da autenticidade
-- Rejeição de sensores já registrados
+- Registro de sensores
+- Velidação de dados de entrada
+- Validação de entidades cadastradas 
+- Verificações de segurança básica
 - Acesso restrito a administradores
 
 ## Observações
 
 - Os contratos foram organizados por tipo de sensor para maior modularidade.
-- O projeto pode ser facilmente expandido para atuaradores, mais tipos de sensores ou classes distintas de dispostivos com dados mais complexos.
+- Por se tratar de um MVSC, o projeto pode ser facilmente expandido para classes distintas de dispostivos com dados mais complexos.
 - Os contratos foram implantados usando scripts/deploy.js
 
